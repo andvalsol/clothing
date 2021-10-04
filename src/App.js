@@ -1,44 +1,40 @@
-import React, {Component} from "react";
-import './App.css'
+import React, {useEffect, lazy, Suspense} from "react";
 import {Route, Switch, Redirect} from "react-router-dom";
-import HomePage from "./pages/homepage/Homepage";
-import ShopPage from "./pages/shop/shopPage";
 import Header from "./components/header/header";
-import SignInSignUp from "./pages/signIn&SignUp/signIn&SignUp";
-import {connect} from "react-redux";
-import {checkUserSession, setCurrentUser} from "./redux/user/userActions";
-import CheckoutPage from "./pages/checkout/checkout";
-import {selectCollectionsForPreview} from "./redux/shop/shop.selectors";
+import {useDispatch, useSelector} from "react-redux";
+import {checkUserSession} from "./redux/user/userActions";
+import {selectCurrentUser} from "./redux/user/user.selector";
+import Spinner from "./components/withSpinner/spinner.component";
+import ErrorBoundary from "./components/errorBoundary/errorBoundary.component";
 
-class App extends Component {
+const HomePage = lazy(() => import('./pages/homepage/Homepage'));
+const ShopPage = lazy(() => import ('./pages/shop/shopPage'));
+const CheckoutPage = lazy(() => import('./pages/checkout/checkout'));
+const SignInSignUp = lazy(() => import('./pages/signIn&SignUp/signIn&SignUp'));
 
-    componentDidMount() {
-        this.props.checkUserSession();
-    }
+const App = () => {
+    const user = useSelector(selectCurrentUser);
+    const dispatch = useDispatch();
 
-    render() {
-        return (
-            <div className='body'>
-                <Header/>
-                <Switch>
-                    <Route exact path='/' component={HomePage}/>
-                    <Route path='/shop' component={ShopPage}/>
-                    <Route exact path='/sign-in' render={() => this.props.user ? <Redirect/> : <SignInSignUp/>}/>
-                    <Route exact path='/checkout' component={CheckoutPage}/>
-                </Switch>
-            </div>
-        );
-    }
+    useEffect(() => {
+        dispatch(checkUserSession());
+    }, [dispatch]);
+
+    return (
+        <div>
+            <Header/>
+            <Switch>
+                <ErrorBoundary>
+                    <Suspense fallback={<Spinner/>}>
+                        <Route exact path='/' component={HomePage}/>
+                        <Route path='/shop' component={ShopPage}/>
+                        <Route exact path='/sign-in' render={() => user ? <Redirect/> : <SignInSignUp/>}/>
+                        <Route exact path='/checkout' component={CheckoutPage}/>
+                    </Suspense>
+                </ErrorBoundary>
+            </Switch>
+        </div>
+    );
 }
 
-const mapStateToProps = (state) => ({
-    user: setCurrentUser(state),
-    collectionsArray: selectCollectionsForPreview(state)
-})
-
-const mapDispatchToProps = (dispatch) => ({
-    setCurrentUser: (user) => dispatch(setCurrentUser(user)),
-    checkUserSession: () => dispatch(checkUserSession())
-})
-
-export default connect(mapStateToProps, mapDispatchToProps)(App);
+export default App;

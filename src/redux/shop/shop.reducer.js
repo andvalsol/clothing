@@ -15,7 +15,6 @@ export const shopReducer = (state = INITIAL_STATE, action) => {
                 isFetching: false
             };
         case ShopActionTypes.FETCH_COLLECTIONS_START:
-            console.log('Reducer called!')
             return {
                 ...state,
                 isFetching: true
